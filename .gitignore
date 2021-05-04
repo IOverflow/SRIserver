@@ -3,3 +3,6 @@ db.sqlite3
 
 # ignore vscode folder
 .vscode
+
+# python cache folders
+__pycache__

@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Iterable, List, Optional
 
 from sqlalchemy.orm.session import Session
-from ..models.disease import Disease
+from models.disease import Disease
 
 class IDiseaseRepository(ABC):
 

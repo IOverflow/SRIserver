@@ -2,7 +2,7 @@ from typing import Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column
 from sqlalchemy import Integer, Text
-from ..dependencies.dbconnection import Base
+from dependencies.dbconnection import Base
 from .disease_symptom_table import association_table
 
 class Disease(Base):

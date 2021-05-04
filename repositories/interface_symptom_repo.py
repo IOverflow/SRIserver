@@ -2,7 +2,7 @@ from abc import ABC
 from typing import Iterable, List, Optional
 
 from sqlalchemy.orm.session import Session
-from ..models.symptom import Symptom
+from models.symptom import Symptom
 
 class ISymptomRepository(ABC):
 

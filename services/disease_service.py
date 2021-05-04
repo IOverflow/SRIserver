@@ -2,9 +2,9 @@ from dtos.write_disease_dto import DiseaseWriteDto
 from typing import Iterable, List
 from sqlalchemy.orm import Session
 from fastapi import Depends
-from ..dependencies.dbconnection import get_db
-from ..dependencies.repositories import disease_repository, IDiseaseRepository
-from ..models.disease import Disease
+from dependencies.dbconnection import get_db
+from dependencies.repositories import disease_repository, IDiseaseRepository
+from models.disease import Disease
 
 
 class DiseaseService:

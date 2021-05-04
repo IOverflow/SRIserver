@@ -1,7 +1,7 @@
 from sqlalchemy.orm.session import Session
 from typing import Iterable, Optional
 from .interface_disesease_repository import IDiseaseRepository
-from ..models.disease import Disease
+from models.disease import Disease
 
 
 class DiseaseRepository(IDiseaseRepository):

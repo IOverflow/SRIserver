@@ -1,7 +1,7 @@
 from sqlalchemy import Table
 from sqlalchemy.sql.schema import Column, ForeignKey
 from sqlalchemy.sql.sqltypes import Integer
-from ..dependencies.dbconnection import Base
+from dependencies.dbconnection import Base
 
 association_table = Table(
     "diseases_to_symptoms",

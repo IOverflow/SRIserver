@@ -1,7 +1,7 @@
 from sqlalchemy.orm.session import Session
 from typing import Iterable, Optional
 from .interface_symptom_repo import ISymptomRepository
-from ..models.symptom import Symptom
+from models.symptom import Symptom
 
 
 class SymptomRepository(ISymptomRepository):
