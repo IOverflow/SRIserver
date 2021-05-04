@@ -9,4 +9,4 @@ class Symptom(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     description = Column(String)
-    diseases = relationship("Symptom", secondary=association_table, back_populates="symptoms")
+    diseases = relationship("Disease", secondary=association_table, back_populates="symptoms")

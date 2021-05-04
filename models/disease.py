@@ -11,4 +11,4 @@ class Disease(Base):
     id = Column(Integer, primary_key=True, index=True)
     description = Column(Text)
     treatment = Column(Text)
-    symptoms = relationship("Disease", secondary=association_table, back_populates="diseases")
+    symptoms = relationship("Symptom", secondary=association_table, back_populates="diseases")
