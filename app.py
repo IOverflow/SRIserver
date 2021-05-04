@@ -1,15 +1,11 @@
 from fastapi import FastAPI
 import loaders
+from controllers.disease_controller import disease_controller
 
 # Initialize database here
 loaders.load_database()
 
 app = FastAPI()
 
-@app.get("/")
-async def home():
-    return "Hello World"
-
-@app.post("/")
-async def post_home(message: str):
-    return f"Posted: {message}"
+# Load controllers here
+app.include_router(disease_controller)
