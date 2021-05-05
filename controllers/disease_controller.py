@@ -1,9 +1,8 @@
 from services.disease_service import DiseaseService
-from dtos.write_disease_dto import DiseaseWriteDto
 from typing import List
 from fastapi import APIRouter
 from fastapi.param_functions import Depends
-from dtos.read_disease_dto import DiseaseReadDto
+from dtos.disease_dtos import DiseaseReadDto, DiseaseWriteDto
 
 disease_controller = APIRouter(prefix="/disease")
 
@@ -14,16 +13,10 @@ def get(disease_service: DiseaseService = Depends()):
 
 
 @disease_controller.get("/{id}", response_model=DiseaseReadDto)
-def get_id(
-    id: int,
-    disease_service: DiseaseService = Depends(),
-):
+def get_id(id: int, disease_service: DiseaseService = Depends()):
     return disease_service.get_by_id(id)
 
 
 @disease_controller.post("/create", response_model=DiseaseReadDto)
-def create(
-    disease: DiseaseWriteDto,
-    disease_service: DiseaseService = Depends(),
-):
+def create(disease: DiseaseWriteDto, disease_service: DiseaseService = Depends()):
     return disease_service.create(disease)

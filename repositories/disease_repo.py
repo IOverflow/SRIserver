@@ -1,4 +1,4 @@
-from dtos.read_disease_dto import DiseaseReadDto
+from dtos.disease_dtos import DiseaseReadDto
 from fastapi.param_functions import Depends
 from dependencies.dbconnection import get_db
 from sqlalchemy.orm.session import Session
