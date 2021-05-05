@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 from fastapi import FastAPI
 import loaders
 from controllers.disease_controller import disease_controller
+from controllers.search_controller import search_controller
 from services.search_service import index
 from math import log10
 from colorama import Fore
@@ -62,6 +63,7 @@ async def make_index():
 
 # Load controllers here
 app.include_router(disease_controller)
+app.include_router(search_controller)
 
 if __name__ == '__main__':
     uvicorn.run(app, host=conf.HOST_IP, port=conf.HOST_PORT)
