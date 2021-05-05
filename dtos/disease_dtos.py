@@ -6,7 +6,7 @@ class DiseaseReadDto(BaseModel):
     name: str
     description: str
     treatment: str
-    symptoms: Optional[List[int]]
+    symptoms: Optional[str]
 
     class Config:
         orm_mode = True
@@ -16,6 +16,7 @@ class DiseaseWriteDto(BaseModel):
     name: str
     description: str
     treatment: str
+    symptoms: Optional[str]
 
     class Config:
         orm_mode = True

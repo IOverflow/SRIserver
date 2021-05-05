@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.sql.schema import Column, ForeignKey
 from sqlalchemy import Integer, String, Text, Numeric
@@ -8,7 +9,6 @@ class Symptom(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     description = Column(String)
-    diseases = relationship("Disease", secondary='symptomDisease')
 
 class Disease(Base):
     __tablename__ = "diseases"
@@ -17,14 +17,21 @@ class Disease(Base):
     name = Column(String)
     description = Column(Text)
     treatment = Column(Text)
-    symptoms = relationship("Symptom", secondary='symptomDisease')
+    symptoms = Column(Text)
 
-class SymptomDisease(Base):
-    __tablename__ = "symptomDisease"
-    id = Column(Integer, primary_key=True)
-    disease_id = Column(Integer, ForeignKey("diseases.id"))
-    symptom_id = Column(Integer, ForeignKey("symptoms.id"))
-    relevance = Column(Numeric, default=0.)
+    def get_terms(self):
+        terms: List[str] = []
+        for word in self.name.split():
+            terms.append(word)
+        
+        for word in self.description.split():
+            terms.append(word)
 
-    disease = relationship("Disease", backref=backref("relevances", cascade="all, delete-orphan"))
-    symptom = relationship("Symptom", backref=backref("relevances", cascade="all, delete-orphan"))
+        for word in self.treatment.split():
+            terms.append(word)
+
+        if self.symptoms:
+            for word in self.symptoms.split():
+                terms.append(word)
+
+        return terms

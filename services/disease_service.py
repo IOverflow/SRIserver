@@ -1,4 +1,4 @@
-from dtos.write_disease_dto import DiseaseWriteDto
+from dtos.disease_dtos import DiseaseWriteDto
 from fastapi import Depends
 from dependencies.repositories import disease_repository, IDiseaseRepository
 
