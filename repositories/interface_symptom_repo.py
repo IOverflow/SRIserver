@@ -1,27 +1,24 @@
 from abc import ABC
+from dependencies.dbconnection import get_db
 from typing import Iterable, List, Optional
+from fastapi.param_functions import Depends
 
 from sqlalchemy.orm.session import Session
-from models.symptom import Symptom
+from models.models import Symptom
 
 class ISymptomRepository(ABC):
 
-    @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 0) -> Iterable[Symptom]:
+    def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[Symptom]:
         return []
 
-    @staticmethod
-    def find_by_id(db: Session, id: int) -> Optional[Symptom]:
+    def find_by_id(self, id: int) -> Optional[Symptom]:
         return Symptom()
 
-    @staticmethod
-    def save(db: Session, **kwargs) -> Symptom:
+    def save(self, **kwargs) -> Symptom:
         return Symptom()
 
-    @staticmethod
-    def delete(db: Session, id: int) -> None:
+    def delete(self, id: int) -> None:
         pass
 
-    @staticmethod
-    def update(db: Session, **kwargs) -> Symptom:
+    def update(self, **kwargs) -> Symptom:
         return Symptom()

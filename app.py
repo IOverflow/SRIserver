@@ -3,7 +3,7 @@ import loaders
 from controllers.disease_controller import disease_controller
 
 # Initialize database here
-loaders.load_database()
+# loaders.load_database()
 
 app = FastAPI()
 

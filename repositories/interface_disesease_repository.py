@@ -1,27 +1,23 @@
 from abc import ABC
+from dependencies.dbconnection import get_db
 from typing import Iterable, List, Optional
-
+from fastapi import Depends
 from sqlalchemy.orm.session import Session
-from models.disease import Disease
+from models.models import Disease
 
 class IDiseaseRepository(ABC):
 
-    @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 0) -> Iterable[Disease]:
+    def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[Disease]:
         return []
 
-    @staticmethod
-    def find_by_id(db: Session, id: int) -> Optional[Disease]:
+    def find_by_id(self, id: int) -> Optional[Disease]:
         return Disease()
 
-    @staticmethod
-    def save(db: Session, **kwargs) -> Disease:
+    def save(self, **kwargs) -> Disease:
         return Disease()
 
-    @staticmethod
-    def delete(db: Session, id: int) -> None:
+    def delete(self, id: int) -> None:
         pass
 
-    @staticmethod
-    def update(db: Session, **kwargs) -> Disease:
+    def update(self, **kwargs) -> Disease:
         return Disease()

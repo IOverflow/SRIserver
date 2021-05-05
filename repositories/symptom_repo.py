@@ -1,33 +1,33 @@
+from dependencies.dbconnection import get_db
+from fastapi.param_functions import Depends
 from sqlalchemy.orm.session import Session
 from typing import Iterable, Optional
 from .interface_symptom_repo import ISymptomRepository
-from models.symptom import Symptom
+from models.models import Symptom
 
 
 class SymptomRepository(ISymptomRepository):
-    @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 0) -> Iterable[Symptom]:
-        return db.query(Symptom).offset(skip).limit(limit).all()
+    def __init__(self, db: Session = Depends(get_db)):
+        self.db = db
 
-    @staticmethod
-    def find_by_id(db: Session, id: int) -> Optional[Symptom]:
-        return db.query(Symptom).filter_by(id=id).first()
+    def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[Symptom]:
+        return self.db.query(Symptom).offset(skip).limit(limit).all()
 
-    @staticmethod
-    def save(db: Session, **kwargs) -> Symptom:
+    def find_by_id(self, id: int) -> Optional[Symptom]:
+        return self.db.query(Symptom).filter_by(id=id).first()
+
+    def save(self, **kwargs) -> Symptom:
         symptom = Symptom(**kwargs)
-        db.add(symptom)
-        db.commit()
-        db.refresh(symptom)
+        self.db.add(symptom)
+        self.db.commit()
+        self.db.refresh(symptom)
         return symptom
 
-    @staticmethod
-    def delete(db: Session, id: int) -> None:
-        symptom = db.query(Symptom).filter_by(id=id).first()
+    def delete(self, id: int) -> None:
+        symptom = self.db.query(Symptom).filter_by(id=id).first()
         if symptom is not None:
-            db.delete(symptom)
-            db.flush()
+            self.db.delete(symptom)
+            self.db.flush()
 
-    @staticmethod
-    def update(db: Session, **kwargs) -> Symptom:
+    def update(self, **kwargs) -> Symptom:
         return Symptom()
