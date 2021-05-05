@@ -15,6 +15,7 @@ import config.settings as conf
 
 app = FastAPI()
 
+
 @app.on_event("startup")
 async def make_index():
     """
@@ -22,7 +23,7 @@ async def make_index():
     """
     disease_service = get_disease_service()
     diseases = disease_service.get_all()
-    freq: Dict[Tuple[str,int], int] = {}
+    freq: Dict[Tuple[str, int], int] = {}
     idf: Dict[str, float] = {}
     system_terms: Dict[str, int] = {}
     tf: Dict[Tuple[str, int], float] = {}
@@ -41,14 +42,19 @@ async def make_index():
     # Compute TFij
     for (term, doc), frequency in freq.items():
         # Get the maximum frequency of all terms in doc
-        max_freq = max(map(lambda tfd: tfd[1], filter(lambda tfd: tfd[0][1] == doc, freq.items())))
+        max_freq = max(
+            map(
+                lambda tfd: tfd[1],
+                filter(lambda tfd: tfd[0][1] == doc, freq.items()),
+            )
+        )
         tf[term, doc] = frequency / max_freq
 
     # Compute idf
     N = len(list(diseases))
     for term, ni in system_terms.items():
         try:
-            idf[term] = log10(N/ni)
+            idf[term] = log10(N / ni)
         except ZeroDivisionError:
             idf[term] = 0
 
@@ -65,5 +71,5 @@ async def make_index():
 app.include_router(disease_controller)
 app.include_router(search_controller)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     uvicorn.run(app, host=conf.HOST_IP, port=conf.HOST_PORT)

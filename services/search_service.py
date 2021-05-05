@@ -2,6 +2,7 @@ from dtos.query_dtos import QueryTerms
 from services.disease_service import DiseaseService
 from typing import Dict, List, Tuple
 from models.models import Disease
+from math import sqrt
 
 from fastapi.param_functions import Depends
 
@@ -19,7 +20,21 @@ class Index:
         return {}
 
     def compute_sim(self, vquery: Dict[str, float], vdoc: Dict[str, float]) -> float:
-        return 0.0
+        all_terms = set(vquery.keys()).union(set(vdoc.keys()))
+        
+        numerator = sum(
+            list(
+                wij * wiq
+                for wij, wiq in zip(
+                    list(vdoc.get(t, 0.0) for t in all_terms),
+                    list(vquery.get(t, 0.0) for t in all_terms),
+                )
+            )
+        )
+        
+        denominator = sqrt(sum(vdoc.get(t, 0.)**2 for t in all_terms)) * sqrt(sum(vquery.get(t, 0.0)**2 for t in all_terms))
+        
+        return numerator / denominator
 
     def __call__(self):
         return self
@@ -56,5 +71,5 @@ class SearchService:
                 sorted(sim_doc_pair, reverse=True),
             )
         )
-        
+
         return search_resul
