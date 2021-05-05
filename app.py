@@ -45,7 +45,7 @@ async def make_index():
         tf[term, doc] = frequency / max_freq
 
     # Compute idf
-    N = len(system_terms.keys())
+    N = len(list(diseases))
     for term, ni in system_terms.items():
         try:
             idf[term] = log10(N/ni)

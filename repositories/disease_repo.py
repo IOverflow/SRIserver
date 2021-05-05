@@ -65,4 +65,5 @@ class JsonDiseaseRepository(IDiseaseRepository):
         store.close()
         store = open(self.file, "wb")
         store.write(json.dumps(data).encode())
+        store.close()
         return Disease(**kwargs)
