@@ -2,7 +2,7 @@ from dtos.query_dtos import QueryTerms
 from services.disease_service import DiseaseService
 from typing import Dict, List, Tuple
 from models.models import Disease
-from math import sqrt
+from math import log10, sqrt
 
 from fastapi.param_functions import Depends
 
@@ -13,15 +13,30 @@ class Index:
         self.system_terms: Dict[str, int] = {}
         self.total_documents: int = 0
 
-    def compute_query_vector(self, query: List[str]) -> Dict[str, float]:
-        return {}
+    def compute_query_vector(self, query: List[str], alpha=0.5) -> Dict[str, float]:
+        result: Dict[str, float] = {}
+        frequency = {t: len(list(filter(lambda x: x == t, query))) for t in set(query)}
+        max_freq = max(map(lambda t: frequency.get(t, 0), set(query)))
+
+        for term, ni in self.system_terms.items():
+            result[term] = (alpha + (1 - alpha) * (frequency.get(term, 0) / max_freq)) * log10(self.total_documents / ni)
+
+        return result
 
     def compute_doc_vector(self, doc: int) -> Dict[str, float]:
-        return {}
+        result: Dict[str, float] = {}
+        
+        for term in self.system_terms.keys():
+            try:
+                result[term] = self.weight_function[term, doc]
+            except KeyError:
+                pass
+
+        return result
 
     def compute_sim(self, vquery: Dict[str, float], vdoc: Dict[str, float]) -> float:
         all_terms = set(vquery.keys()).union(set(vdoc.keys()))
-        
+
         numerator = sum(
             list(
                 wij * wiq
@@ -65,11 +80,11 @@ class SearchService:
             sim_doc_pair.append((similarity, doc))
 
         # order similarity list in descending order
-        search_resul = list(
+        search_result = list(
             map(
                 lambda sd: self.disease_service.get_by_id(sd[1]) or Disease(),
                 sorted(sim_doc_pair, reverse=True),
             )
         )
 
-        return search_resul
+        return search_result
