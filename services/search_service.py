@@ -1,3 +1,4 @@
+from pandas.io import json
 from dependencies.startup import get_disease_service
 from dtos.query_dtos import QueryTerms
 from services.disease_service import DiseaseService
@@ -63,11 +64,17 @@ class Index:
 
     def compute_query_vector(self, query: List[str], alpha=0.5) -> Dict[str, float]:
         result: Dict[str, float] = {}
-        frequency = {t: len(list(filter(lambda x: x == t, query))) for t in set(query)}
+        frequency = {t: len(list(filter(lambda x: x == t, query))) for t in self.system_terms.keys()}
         max_freq = max(map(lambda t: frequency.get(t, 0), set(query)))
 
         for term, ni in self.system_terms.items():
-            result[term] = (alpha + (1 - alpha) * (frequency.get(term, 0) / max_freq)) * log10(self.total_documents / ni)
+            if term in query:
+                try:
+                    result[term] = (alpha + (1 - alpha)*(frequency.get(term, 0) / max_freq)) * log10(self.total_documents / ni)
+                except ZeroDivisionError:
+                    result[term] = 0
+            else:
+                result[term] = 0
 
         return result
 
@@ -75,10 +82,7 @@ class Index:
         result: Dict[str, float] = {}
         
         for term in self.system_terms.keys():
-            try:
-                result[term] = self.weight_function[term, doc]
-            except KeyError:
-                pass
+            result[term] = self.weight_function.get((term, doc),0)
 
         return result
 
@@ -97,7 +101,10 @@ class Index:
         
         denominator = sqrt(sum(vdoc.get(t, 0.)**2 for t in all_terms)) * sqrt(sum(vquery.get(t, 0.0)**2 for t in all_terms))
         
-        return numerator / denominator
+        try:
+            return numerator / denominator
+        except ZeroDivisionError:
+            return 0
 
     def __call__(self):
         return self
