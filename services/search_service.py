@@ -4,6 +4,7 @@ from services.disease_service import DiseaseService
 from typing import Dict, List, Tuple
 from models.models import Disease
 from math import log10, sqrt
+from colorama import Fore
 
 from fastapi.param_functions import Depends
 
@@ -124,7 +125,9 @@ class SearchService:
         for doc in docs:
             vdoc = index.compute_doc_vector(doc)
             similarity = index.compute_sim(query_vector, vdoc)
-            sim_doc_pair.append((similarity, doc))
+            print(f"{Fore.CYAN}SIMILARITY of {doc}: {similarity}{Fore.RESET}")
+            if similarity > 0:
+                sim_doc_pair.append((similarity, doc))
 
         # order similarity list in descending order
         search_result = list(

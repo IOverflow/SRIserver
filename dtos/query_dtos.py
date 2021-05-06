@@ -6,3 +6,6 @@ class QueryTerms(BaseModel):
 
     def get_terms(self) -> List[str]:
         return self.query.split()
+
+def query_dependency(query: str):
+    return QueryTerms(query=query)

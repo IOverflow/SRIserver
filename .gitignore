@@ -6,3 +6,6 @@ db.sqlite3
 
 # python cache folders
 __pycache__
+
+# ignore source data files
+data/dump.json

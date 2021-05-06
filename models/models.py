@@ -31,7 +31,8 @@ class Disease(Base):
             terms.append(word)
 
         if self.symptoms:
-            for word in self.symptoms.split():
-                terms.append(word)
+            for symptom in self.symptoms.split(","):
+                for word in symptom.split():
+                    terms.append(word)
 
         return terms
