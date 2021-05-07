@@ -2,7 +2,7 @@ from pandas.io import json
 from dependencies.startup import get_disease_service
 from dtos.query_dtos import QueryTerms
 from services.disease_service import DiseaseService
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 from models.models import Disease
 from math import log10, sqrt
 from colorama import Fore
@@ -145,3 +145,6 @@ class SearchService:
         )
 
         return search_result
+
+    def get_all_index_terms(self) -> Iterable[str]:
+        return list(self.index.system_terms.keys())

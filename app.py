@@ -6,11 +6,21 @@ from services.search_service import Index, index
 from colorama import Fore
 import uvicorn
 import config.settings as conf
+from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize database here
 # loaders.load_database()
 
 app = FastAPI()
+
+# Add middlewares here
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=conf.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
 @app.on_event("startup")

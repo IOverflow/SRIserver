@@ -15,3 +15,9 @@ DATABASE_AUTOFLUSH = False
 
 HOST_IP = "0.0.0.0"
 HOST_PORT = 8000
+
+# Configure CORS Middleware
+ALLOWED_ORIGINS=[
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
