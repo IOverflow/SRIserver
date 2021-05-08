@@ -8,15 +8,15 @@ disease_controller = APIRouter(prefix="/disease")
 
 
 @disease_controller.get("/", response_model=List[DiseaseReadDto])
-def get(disease_service: DiseaseService = Depends()):
-    return disease_service.get_all()
+async def get(disease_service: DiseaseService = Depends()):
+    return await disease_service.get_all()
 
 
 @disease_controller.get("/{id}", response_model=DiseaseReadDto)
-def get_id(id: int, disease_service: DiseaseService = Depends()):
-    return disease_service.get_by_id(id)
+async def get_id(id: int, disease_service: DiseaseService = Depends()):
+    return await disease_service.get_by_id(id)
 
 
 @disease_controller.post("/create", response_model=DiseaseReadDto)
-def create(disease: DiseaseWriteDto, disease_service: DiseaseService = Depends()):
-    return disease_service.create(disease)
+async def create(disease: DiseaseWriteDto, disease_service: DiseaseService = Depends()):
+    return await disease_service.create(disease)

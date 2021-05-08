@@ -1,9 +1,9 @@
+from dtos.disease_dtos import DiseaseReadDto
 from pandas.io import json
 from dependencies.startup import get_disease_service
 from dtos.query_dtos import QueryTerms
 from services.disease_service import DiseaseService
 from typing import Dict, Iterable, List, Tuple
-from models.models import Disease
 from math import log10, sqrt
 from colorama import Fore
 
@@ -17,9 +17,9 @@ class Index:
         self.total_documents: int = 0
 
     @staticmethod
-    def initialize(index: "Index"):
+    async def initialize(index: "Index"):
         disease_service = get_disease_service()
-        diseases = disease_service.get_all()
+        diseases = await disease_service.get_all()
         freq: Dict[Tuple[str, int], int] = {}
         idf: Dict[str, float] = {}
         system_terms: Dict[str, int] = {}
@@ -64,13 +64,18 @@ class Index:
 
     def compute_query_vector(self, query: List[str], alpha=0.5) -> Dict[str, float]:
         result: Dict[str, float] = {}
-        frequency = {t: len(list(filter(lambda x: x == t, query))) for t in self.system_terms.keys()}
+        frequency = {
+            t: len(list(filter(lambda x: x == t, query)))
+            for t in self.system_terms.keys()
+        }
         max_freq = max(map(lambda t: frequency.get(t, 0), set(query)))
 
         for term, ni in self.system_terms.items():
             if term in query:
                 try:
-                    result[term] = (alpha + (1 - alpha)*(frequency.get(term, 0) / max_freq)) * log10(self.total_documents / ni)
+                    result[term] = (
+                        alpha + (1 - alpha) * (frequency.get(term, 0) / max_freq)
+                    ) * log10(self.total_documents / ni)
                 except ZeroDivisionError:
                     result[term] = 0
             else:
@@ -80,9 +85,9 @@ class Index:
 
     def compute_doc_vector(self, doc: int) -> Dict[str, float]:
         result: Dict[str, float] = {}
-        
+
         for term in self.system_terms.keys():
-            result[term] = self.weight_function.get((term, doc),0)
+            result[term] = self.weight_function.get((term, doc), 0)
 
         return result
 
@@ -98,9 +103,11 @@ class Index:
                 )
             )
         )
-        
-        denominator = sqrt(sum(vdoc.get(t, 0.)**2 for t in all_terms)) * sqrt(sum(vquery.get(t, 0.0)**2 for t in all_terms))
-        
+
+        denominator = sqrt(sum(vdoc.get(t, 0.0) ** 2 for t in all_terms)) * sqrt(
+            sum(vquery.get(t, 0.0) ** 2 for t in all_terms)
+        )
+
         try:
             return numerator / denominator
         except ZeroDivisionError:
@@ -124,7 +131,7 @@ class SearchService:
         self.index = indx
         self.disease_service = disease_service
 
-    def search(self, query: QueryTerms) -> List[Disease]:
+    async def search(self, query: QueryTerms) -> List[DiseaseReadDto]:
         query_vector = self.index.compute_query_vector(query.get_terms())
         docs = set(map(lambda td: td[1], index.weight_function.keys()))
         sim_doc_pair: List[Tuple[float, int]] = []
@@ -137,12 +144,10 @@ class SearchService:
                 sim_doc_pair.append((similarity, doc))
 
         # order similarity list in descending order
-        search_result = list(
-            map(
-                lambda sd: self.disease_service.get_by_id(sd[1]) or Disease(),
-                sorted(sim_doc_pair, reverse=True),
-            )
-        )
+        search_result = [
+            (await self.disease_service.get_by_id(sd[1])) or DiseaseReadDto()
+            for sd in sorted(sim_doc_pair, reverse=True)
+        ]
 
         return search_result
 

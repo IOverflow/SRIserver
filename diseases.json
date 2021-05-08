@@ -1,22 +1,22 @@
 [
     {
       "name":"acquired immuno-deficiency syndrome",
-      "description":"",
+      "description":"A disease of the immune system due to infection with HIV, HIV destroys the CD4 T lymphocytes of the immune system, leaving the body vulnerable to life-threatening infections and cancers, acquired immunodeficiency syndrome ,AIDS, is the most advanced stage of HIV infection, to be diagnosed with AIDS, a person with HIV must have an AIDS-defining condition or have a CD4 count less than 200 cells/mm3",
       "treatment":"",
       "symptoms":"cough, fever, night sweat, spontaneous rupture of membranes",
       "id":1
     },
     {
       "name":"adhesion",
-      "description":"",
-      "treatment":"",
+      "description":"Adhesions develop as the body attempts to repair itself. This normal response can occur after surgery, infection, injury (trauma) or radiation. Adhesions may appear as thin sheets of tissue similar to plastic wrap, or as thick fibrous bands",
+      "treatment":"Adhesions can be treated either with open or laparoscopic surgery, known as adhesiolysis, the adhesions are cut by scalpel or electrical current",
       "symptoms":"breech presentation, decreased body weight, feeling suicidal, flatulence, hallucinations visual, immobile, large-for-dates fetus, lung nodule, pain, para 1, shortness of breath, unsteady gait, vomiting",
       "id":2
     },
     {
       "name":"affect labile",
-      "description":"",
-      "treatment":"",
+      "description":"rapid changes in their emotions that don't seem to relate to any outside situations or seem to be inappropriate for the situation",
+      "treatment":" antipsychotics, antidepressants or mood stabilizers, dextromethorphan and quinidine",
       "symptoms":"bedridden, enuresis, extreme exhaustion, feeling hopeless, hallucinations visual, patient non compliance, prostatism, sleeplessness",
       "id":3
     },

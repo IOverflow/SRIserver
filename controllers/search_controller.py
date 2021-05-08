@@ -10,7 +10,7 @@ search_controller = APIRouter(prefix="/search")
 
 @search_controller.get("/", response_model=List[DiseaseReadDto])
 async def search(q: QueryTerms = Depends(query_dependency), search_service: SearchService = Depends()):
-    return search_service.search(q)
+    return await search_service.search(q)
 
 @search_controller.get("/vocabulary", response_model=List[str])
 async def vocabulary(search_service: SearchService = Depends()):

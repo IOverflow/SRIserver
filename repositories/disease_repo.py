@@ -1,62 +1,70 @@
+from databases.core import Database
+import sqlalchemy
+from sqlalchemy.orm import query
 from dtos.disease_dtos import DiseaseReadDto
 from fastapi.param_functions import Depends
-from dependencies.dbconnection import get_db
 from sqlalchemy.orm.session import Session
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Mapping, Optional
 from .interface_disesease_repository import IDiseaseRepository
-from models.models import Disease
 import json
+from dependencies.dbconnection import database
+from models.models import diseases
 
 
 class DiseaseRepository(IDiseaseRepository):
 
-    def __init__(self, db: Session = Depends(get_db)):
-        self.db = db
+    def __init__(self, database: Database = database, table: sqlalchemy.Table = diseases):
+        self.database = database
+        self.table = table
 
-    def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[Disease]:
-        return self.db.query(Disease).offset(skip).limit(limit).all()
+    async def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[DiseaseReadDto]:
+        query = self.table.select()
+        diseases = await self.database.fetch_all(query)
+        return [DiseaseReadDto(**disease) for disease in diseases]
 
-    def find_by_id(self, id: int) -> Optional[Disease]:
-        return self.db.query(Disease).filter_by(id=id).first()
+    async def find_by_id(self, id: int) -> Optional[DiseaseReadDto]:
+        query = self.table.select().where(self.table.c.id==id)
+        disease = await self.database.fetch_one(query)
+        if disease:
+            return DiseaseReadDto(**disease)
+        else:
+            return None
 
-    def save(self, **kwargs) -> Disease:
-        disease = Disease(**kwargs)
-        self.db.add(disease)
-        self.db.commit()
-        self.db.refresh(disease)
-        return disease
+    async def save(self, **kwargs) -> int:
+        query = self.table.insert().values(**kwargs)
+        disease_id = await self.database.execute(query)
+        return disease_id
 
-    def delete(self, id: int) -> None:
-        disease = self.db.query(Disease).filter_by(id=id).first()
-        if disease is not None:
-            self.db.delete(disease)
-            self.db.flush()
+    async def delete(self, id: int) -> None:
+        query = self.table.delete().where(self.table.c.id == id)
+        await self.database.execute(query)
 
-    def update(self, **kwargs) -> Disease:
-        return Disease()
+    async def update(self, **kwargs) -> None:
+        query = self.table.update().where(self.table.c.id == kwargs['id']).values(**kwargs)
+        await self.database.execute(query)
 
 class JsonDiseaseRepository(IDiseaseRepository):
 
     def __init__(self) -> None:
         self.file = 'diseases.json'
 
-    def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[Disease]:
-        result: List[Disease] = []
+    async def get_all(self, skip: int = 0, limit: int = 0) -> Iterable[DiseaseReadDto]:
+        result: List[DiseaseReadDto] = []
         with open(self.file, "br") as store:
             for data in json.loads(store.read().decode()):
-                result.append(Disease(**data))
+                result.append(DiseaseReadDto(**data))
         return result
 
-    def find_by_id(self, id: int) -> Optional[Disease]:
-        result: Disease = Disease()
+    async def find_by_id(self, id: int) -> Optional[DiseaseReadDto]:
+        result: Optional[DiseaseReadDto] = None
         with open(self.file, "rb") as store:
             for data in json.loads(store.read().decode()):
                 if data['id'] == id:
-                    result = Disease(**data)
+                    result = DiseaseReadDto(**data)
                     break
         return result
 
-    def save(self, **kwargs) -> Disease:
+    async def save(self, **kwargs) -> DiseaseReadDto:
         store = open(self.file, "rb")
         data = json.loads(store.read().decode())
         newId = len(data) + 1
@@ -66,4 +74,4 @@ class JsonDiseaseRepository(IDiseaseRepository):
         store = open(self.file, "wb")
         store.write(json.dumps(data).encode())
         store.close()
-        return Disease(**kwargs)
+        return DiseaseReadDto(**kwargs)
