@@ -26,13 +26,15 @@ async def make_index():
     """
     Create the index for search engine.
     """
-    await database.connect()
+    if conf.USE_DATABASE_BACKEND:
+        await database.connect()
     await Index.initialize(index)
     print(f"{Fore.GREEN}INFO{Fore.RESET}:     Index created")
 
 @app.on_event("shutdown")
 async def shutdown():
-    await database.disconnect()
+    if conf.USE_DATABASE_BACKEND:
+        await database.disconnect()
 
 
 # Load controllers here

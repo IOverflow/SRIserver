@@ -21,3 +21,5 @@ ALLOWED_ORIGINS=[
     "http://localhost:3000",
     "http://localhost:8080",
 ]
+
+USE_DATABASE_BACKEND = False
