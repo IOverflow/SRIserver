@@ -7,6 +7,7 @@ import uvicorn
 from config import settings as conf
 from fastapi.middleware.cors import CORSMiddleware
 from dependencies.dbconnection import database
+from engines.ranking.nn_model import FeedForwardRankingNNModel, ranker
 
 
 app = FastAPI()
@@ -17,7 +18,7 @@ app.add_middleware(
     allow_origins=conf.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 
@@ -30,6 +31,16 @@ async def make_index():
         await database.connect()
     await Index.initialize(index)
     print(f"{Fore.GREEN}INFO{Fore.RESET}:     Index created")
+
+    # Build the NN model for tunning retrieved documents quality
+    vocabulary = len(index.system_terms.keys())
+    ranker.initialize(vocabulary=vocabulary, docs=index.total_documents)
+
+    # Train the model against known queries and relevant documents
+    inputs, targets = FeedForwardRankingNNModel.generate_data_from_json()
+    ranker.train(inputs, targets)
+    print(f"{Fore.GREEN}{ranker.model.summary()}{Fore.RESET}")
+
 
 @app.on_event("shutdown")
 async def shutdown():

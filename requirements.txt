@@ -3,3 +3,5 @@ colorama
 sqlalchemy
 databases
 aiosqlite
+tensorflow
+numpy

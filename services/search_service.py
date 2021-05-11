@@ -1,3 +1,4 @@
+from engines.ranking.nn_model import FeedForwardRankingNNModel, ranker
 from dtos.disease_dtos import DiseaseReadDto
 from pandas.io import json
 from dependencies.startup import get_disease_service
@@ -6,6 +7,7 @@ from services.disease_service import DiseaseService
 from typing import Dict, Iterable, List, Tuple
 from math import log10, sqrt
 from colorama import Fore
+from engines.vector import VectorEngine
 
 from fastapi.param_functions import Depends
 
@@ -62,56 +64,6 @@ class Index:
         index.system_terms = system_terms.copy()
         index.total_documents = N
 
-    def compute_query_vector(self, query: List[str], alpha=0.5) -> Dict[str, float]:
-        result: Dict[str, float] = {}
-        frequency = {
-            t: len(list(filter(lambda x: x == t, query)))
-            for t in self.system_terms.keys()
-        }
-        max_freq = max(map(lambda t: frequency.get(t, 0), set(query)))
-
-        for term, ni in self.system_terms.items():
-            if term in query:
-                try:
-                    result[term] = (
-                        alpha + (1 - alpha) * (frequency.get(term, 0) / max_freq)
-                    ) * log10(self.total_documents / ni)
-                except ZeroDivisionError:
-                    result[term] = 0
-            else:
-                result[term] = 0
-
-        return result
-
-    def compute_doc_vector(self, doc: int) -> Dict[str, float]:
-        result: Dict[str, float] = {}
-
-        for term in self.system_terms.keys():
-            result[term] = self.weight_function.get((term, doc), 0)
-
-        return result
-
-    def compute_sim(self, vquery: Dict[str, float], vdoc: Dict[str, float]) -> float:
-        all_terms = set(vquery.keys()).union(set(vdoc.keys()))
-
-        numerator = sum(
-            list(
-                wij * wiq
-                for wij, wiq in zip(
-                    list(vdoc.get(t, 0.0) for t in all_terms),
-                    list(vquery.get(t, 0.0) for t in all_terms),
-                )
-            )
-        )
-
-        denominator = sqrt(sum(vdoc.get(t, 0.0) ** 2 for t in all_terms)) * sqrt(
-            sum(vquery.get(t, 0.0) ** 2 for t in all_terms)
-        )
-
-        try:
-            return numerator / denominator
-        except ZeroDivisionError:
-            return 0
 
     def __call__(self):
         return self
@@ -127,19 +79,22 @@ class SearchService:
         self,
         indx: Index = Depends(index),
         disease_service: DiseaseService = Depends(),
+        ranker: FeedForwardRankingNNModel = Depends(ranker)
     ):
         self.index = indx
         self.disease_service = disease_service
 
-    async def search(self, query: QueryTerms) -> List[DiseaseReadDto]:
-        query_vector = self.index.compute_query_vector(query.get_terms())
-        docs = set(map(lambda td: td[1], index.weight_function.keys()))
+    async def search(self, query: QueryTerms, v2search=False) -> List[DiseaseReadDto]:
+        query_vector = VectorEngine.compute_query_vector(self.index, query.get_terms())
+        docs = set(map(lambda td: td[1], self.index.weight_function.keys()))
         sim_doc_pair: List[Tuple[float, int]] = []
 
         for doc in docs:
-            vdoc = index.compute_doc_vector(doc)
-            similarity = index.compute_sim(query_vector, vdoc)
-            print(f"{Fore.CYAN}SIMILARITY of {doc}: {similarity}{Fore.RESET}")
+            vdoc = VectorEngine.compute_doc_vector(self.index, doc)
+            if not v2search:
+                similarity = VectorEngine.compute_sim(query_vector, vdoc)
+            else:
+                similarity = VectorEngine.keras_compute_sim(query_vector, vdoc)
             if similarity > 0:
                 sim_doc_pair.append((similarity, doc))
 
