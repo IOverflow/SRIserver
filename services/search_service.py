@@ -1,14 +1,13 @@
 import numpy as np
 from engines.ranking.nn_model import FeedForwardRankingNNModel, ranker
 from dtos.disease_dtos import DiseaseReadDto
-from pandas.io import json
 from dependencies.startup import get_disease_service
 from dtos.query_dtos import QueryTerms
 from services.disease_service import DiseaseService
 from typing import Dict, Iterable, List, Tuple
-from math import log10, sqrt
-from colorama import Fore
+from math import log10
 from engines.vector import VectorEngine
+from random import shuffle
 
 from fastapi.param_functions import Depends
 
@@ -18,6 +17,7 @@ class Index:
         self.weight_function: Dict[Tuple[str, int], float] = {}
         self.system_terms: Dict[str, int] = {}
         self.total_documents: int = 0
+        self.related: Dict[Tuple[str, str], bool] = {}
 
     @staticmethod
     async def initialize(index: "Index"):
@@ -38,6 +38,12 @@ class Index:
                     system_terms[term] += 1
                 except KeyError:
                     system_terms[term] = 1
+
+                # build the related matrix
+                for other_term in unique_terms:
+                    if other_term != term:
+                        index.related[other_term, term] = True
+                        index.related[term, other_term] = True
 
         # Compute TFij
         for (term, doc), frequency in freq.items():
@@ -83,6 +89,27 @@ class SearchService:
     ):
         self.index = indx
         self.disease_service = disease_service
+
+    def get_related_terms(self, query: QueryTerms) -> List[str]:
+        def is_related_to_query(t):
+            return all(self.index.related.get((x, t), False) for x in query.get_terms())
+
+        related: List[str] = list(
+            filter(
+                is_related_to_query,
+                self.index.system_terms.keys(),
+            )
+        )[:4]
+        if related:
+            shuffle(related)
+            return related[:4]
+        else:
+            for t1 in query.get_terms():
+                for t2 in self.index.system_terms.keys():
+                    if self.index.related.get((t1, t2), False):
+                        related.append(t2)
+                        break
+        return related
 
     async def raw_search(self, query: QueryTerms) -> List[DiseaseReadDto]:
         query_vector = VectorEngine.compute_query_vector(self.index, query.get_terms())

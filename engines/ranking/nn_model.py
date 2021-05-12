@@ -59,7 +59,7 @@ class FeedForwardRankingNNModel:
 
     def train(self, input_data: np.ndarray, target_data: np.ndarray) -> None:
         # Prepare the model for trainig
-        self.model.compile(optimizer="sgd", loss=keras.losses.MeanSquaredError())
+        self.model.compile(optimizer="adam", loss=keras.losses.MeanSquaredError(), metrics=["accuracy"])
 
         # train it
         self.model.fit(

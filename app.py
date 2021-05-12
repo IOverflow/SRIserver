@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI
 from controllers.disease_controller import disease_controller
 from controllers.search_controller import search_controller
@@ -8,6 +9,8 @@ from config import settings as conf
 from fastapi.middleware.cors import CORSMiddleware
 from dependencies.dbconnection import database
 from engines.ranking.nn_model import FeedForwardRankingNNModel, ranker
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras.losses import MeanSquaredError
 
 
 app = FastAPI()
@@ -32,13 +35,16 @@ async def make_index():
     await Index.initialize(index)
     print(f"{Fore.GREEN}INFO{Fore.RESET}:     Index created")
 
-    # Build the NN model for tunning retrieved documents quality
-    vocabulary = len(index.system_terms.keys())
-    ranker.initialize(vocabulary=vocabulary, docs=index.total_documents)
+    # load the NN model
+    with open("model.json", "r") as model_file:
+        model_bytecode = model_file.read()
+        ranker.model = model_from_json(model_bytecode)
 
-    # Train the model against known queries and relevant documents
-    inputs, targets = FeedForwardRankingNNModel.generate_data_from_json()
-    ranker.train(inputs, targets)
+    # load the model weights
+    ranker.model.load_weights("model.h5")
+    ranker.model.compile(loss=MeanSquaredError, optimizer="adam")
+
+    print(f"{Fore.GREEN}INFO{Fore.RESET}:     Loaded NN model")
 
 
 @app.on_event("shutdown")
