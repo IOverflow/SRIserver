@@ -73,7 +73,8 @@ class FeedForwardRankingNNModel:
     def compute(
         self, activated_docs: np.ndarray, query_vector: np.ndarray
     ) -> np.ndarray:
-        input_vector = np.concatenate(activated_docs, query_vector)
+        input_vector = np.concatenate((activated_docs, query_vector))
+        input_vector = input_vector.reshape(1, input_vector.size)
         result = self.model.predict(input_vector)
         assert isinstance(result, np.ndarray)
         return result

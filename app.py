@@ -39,7 +39,6 @@ async def make_index():
     # Train the model against known queries and relevant documents
     inputs, targets = FeedForwardRankingNNModel.generate_data_from_json()
     ranker.train(inputs, targets)
-    print(f"{Fore.GREEN}{ranker.model.summary()}{Fore.RESET}")
 
 
 @app.on_event("shutdown")

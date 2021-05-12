@@ -1,3 +1,4 @@
+import numpy as np
 from engines.ranking.nn_model import FeedForwardRankingNNModel, ranker
 from dtos.disease_dtos import DiseaseReadDto
 from pandas.io import json
@@ -84,10 +85,31 @@ class SearchService:
         self.index = indx
         self.disease_service = disease_service
 
+    async def raw_search(self, query: QueryTerms) -> List[DiseaseReadDto]:
+        query_vector = VectorEngine.compute_query_vector(self.index, query.get_terms())
+        docs = set(map(lambda td: td[1], self.index.weight_function.keys()))
+        sim_doc_pair: List[Tuple[float, int]] = []
+
+        for doc in docs:
+            vdoc = VectorEngine.compute_doc_vector(self.index, doc)
+            similarity = VectorEngine.keras_compute_sim(query_vector, vdoc)
+            if similarity > 0:
+                sim_doc_pair.append((similarity, doc))
+
+
+        # order similarity list in descending order
+        search_result = [
+            (await self.disease_service.get_by_id(sd[1])) or DiseaseReadDto()
+            for sd in sorted(sim_doc_pair, reverse=True)
+        ]
+
+        return search_result
+
     async def search(self, query: QueryTerms, v2search=False) -> List[DiseaseReadDto]:
         query_vector = VectorEngine.compute_query_vector(self.index, query.get_terms())
         docs = set(map(lambda td: td[1], self.index.weight_function.keys()))
         sim_doc_pair: List[Tuple[float, int]] = []
+        l: List[float] = []
 
         for doc in docs:
             vdoc = VectorEngine.compute_doc_vector(self.index, doc)
@@ -95,8 +117,19 @@ class SearchService:
                 similarity = VectorEngine.compute_sim(query_vector, vdoc)
             else:
                 similarity = VectorEngine.keras_compute_sim(query_vector, vdoc)
-            if similarity > 0:
-                sim_doc_pair.append((similarity, doc))
+            # if similarity > 0:
+            l.append(similarity)
+
+        # Pass the similarity vector through the ranker engine
+        doc_vector: np.ndarray = np.array(l)
+        q_vector: np.ndarray = np.array(list(query_vector.values()))
+        sim_vector: np.ndarray = ranker.compute(doc_vector, q_vector)
+
+        print(sim_vector)
+
+        for doc, sim in zip(docs, sim_vector[0]):
+            if sim >= 0.2:
+                sim_doc_pair.append((sim, doc))
 
         # order similarity list in descending order
         search_result = [
