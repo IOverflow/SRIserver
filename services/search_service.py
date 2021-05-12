@@ -65,7 +65,6 @@ class Index:
         index.system_terms = system_terms.copy()
         index.total_documents = N
 
-
     def __call__(self):
         return self
 
@@ -80,7 +79,7 @@ class SearchService:
         self,
         indx: Index = Depends(index),
         disease_service: DiseaseService = Depends(),
-        ranker: FeedForwardRankingNNModel = Depends(ranker)
+        ranker: FeedForwardRankingNNModel = Depends(ranker),
     ):
         self.index = indx
         self.disease_service = disease_service
@@ -95,7 +94,6 @@ class SearchService:
             similarity = VectorEngine.keras_compute_sim(query_vector, vdoc)
             if similarity > 0:
                 sim_doc_pair.append((similarity, doc))
-
 
         # order similarity list in descending order
         search_result = [
@@ -124,8 +122,6 @@ class SearchService:
         doc_vector: np.ndarray = np.array(l)
         q_vector: np.ndarray = np.array(list(query_vector.values()))
         sim_vector: np.ndarray = ranker.compute(doc_vector, q_vector)
-
-        print(sim_vector)
 
         for doc, sim in zip(docs, sim_vector[0]):
             if sim >= 0.2:
