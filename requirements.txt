@@ -5,3 +5,8 @@ databases
 aiosqlite
 tensorflow
 numpy
+pytest
+progress 
+progressbar2 
+alive-progress 
+tqdm
