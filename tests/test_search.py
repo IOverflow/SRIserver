@@ -39,7 +39,7 @@ def test_precision_raw_search():
 
     with TestClient(app) as test_client:
         precisions: List[float] = []
-        with alive_bar(len(targets)) as bar:
+        with alive_bar(len(targets), spinner="pulse") as bar:
             for query, target in zip(queries, targets):
                 q = " ".join(query)
                 response = test_client.get("/search", params={"query": q})
@@ -80,7 +80,7 @@ def test_precision_enhanced_search():
 
     with TestClient(app) as test_client:
         precisions: List[float] = []
-        with alive_bar(len(targets)) as bar:
+        with alive_bar(len(targets), spinner="pulse") as bar:
             for query, target in zip(queries, targets):
                 q = " ".join(query)
                 response = test_client.get("/search/ranked", params={"query": q})
@@ -123,7 +123,7 @@ def test_recovery_raw_search():
     with TestClient(app) as test_client:
         precisions: List[float] = []
 
-        with alive_bar(len(targets)) as bar:
+        with alive_bar(len(targets), spinner="pulse") as bar:
             for query, target in zip(queries, targets):
                 q = " ".join(query)
                 response = test_client.get("/search", params={"query": q})
@@ -182,7 +182,7 @@ def test_recovery_enhanced_search():
     with TestClient(app) as test_client:
         precisions: List[float] = []
 
-        with alive_bar(len(targets)) as bar:
+        with alive_bar(len(targets), spinner="pulse") as bar:
             for query, target in zip(queries, targets):
                 q = " ".join(query)
                 response = test_client.get("/search/ranked", params={"query": q})
@@ -241,7 +241,7 @@ def test_fallout_search():
     with TestClient(app) as test_client:
         precisions: List[float] = []
 
-        with alive_bar(len(targets)) as bar:
+        with alive_bar(len(targets), spinner="pulse") as bar:
             for query, target in zip(queries, targets):
                 q = " ".join(query)
                 response = test_client.get("/search", params={"query": q})
@@ -293,7 +293,7 @@ def test_fallout_enhanced_search():
     with TestClient(app) as test_client:
         precisions: List[float] = []
 
-        with alive_bar(len(targets)) as bar:
+        with alive_bar(len(targets), spinner="pulse") as bar:
             for query, target in zip(queries, targets):
                 q = " ".join(query)
                 response = test_client.get("/search/ranked", params={"query": q})
