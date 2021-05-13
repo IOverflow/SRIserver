@@ -178,3 +178,121 @@ cuando una query es requerida, se buscan los terminos que matcheen con la mayor 
 terminos de la query. Estos terminos conforman una lista de posibles sugerencias, de las cuales
 seleccionamos a lo sumo 4 terminos para enviar de vuelta al cliente como sugerencia para extender
 su consulta.
+
+# Implementacion
+
+La implementacion del sistema se divide en dos componentes:
+
+ * Backend: Es un servidor que hostea una API para interactuar con el motor de busqueda.
+ Los principales endpoints que se pueden acceder son 
+   
+   * /diseases : Obtiene todas las enfermedades del sistema
+
+   * /diseases/{id}: Busca una enfermedad en especifico
+
+   * /diseases/create: Crea una nueva enfermedad (posibilidad de agregar nuevos documentos)
+
+   * /search: Realiza una consulta en modo raw.
+
+   * /search/ranked: Realiza una consulta en modo enhanced.
+
+   * /search/vocabulary: Obtiene los terminos en el vocabulario.
+
+ * Frontend: Es un servidor que hostea un cliente para consumir la API propiciada por el
+ backend. Este cliente es el encargado de preprocesar la query antes de enviarla al servidor
+ y ofrece funcionalidades como:
+
+   * Acceso a ambos modos de busqueda: raw y enhanced.
+
+   * Autocompletamiento de los terminos de la query basado en el vocabulario del sistema.
+
+   * Extension de la query basado en los terminos relacionados.
+
+   * Visualizacion y preview de los documentos devueltos por el sistema.
+
+## Frontend
+
+### {Eli aqui pon toda la descripcion de la implementacion del frontend. Incluye imagenes de
+cada vista y algunos resultados.}
+
+## Backend
+
+La estructura del servidor se muestra en la siguiente figura:
+
+![](./BackendAPI.png)
+
+Como se aprecia seguimos una arquitectura de 3 capas para el acceso a los datos, lo que permite
+un desacople de las implementaciones de busqueda, vectorizacion, routing, serializacion y acceso a los stores de datos. Esto permite que el servidor pueda configurarse para usar una base de datos relacional, no relacional o simplemente archivos json para almacenar los documentos. Asi mismo cada servicio, controlador, repositorio, y modulo en general, hace uso extensivo de Inyeccion de Depedencia para lograr funcionalidades independientes de alguna implementacion.
+La estructura del servidor hace facil identificar cada componente (solo hay que guiarse por los nombres de los packages y modulos). El routing ocurre todo en fastAPI, y las posibles rutas
+las podemos encontrar si corremos el servidor 
+
+```bash
+    $ python app.py
+```
+
+y accedemos a la url http://{server}/docs
+
+![](./Docs.png)
+
+### Metricas
+
+Para testear nuestro servidor, creamos el package tests donde se encuentra el modulo test_search.py, el cual se puede correr con pytest y nos informara del comportamiento de las 3 metricas medibles de nuestro sistema (precisio, recovery y fallout). Los tests pueden tardar varios minutos en terminar :). Para correr los tests solo hay que ejecutar:
+
+```bash
+    $ python -m pytest
+```
+![](./Metrics.png)
+
+Como se ve en la figura, el recovery para el modo raw es 1 !!!!!!!.
+
+Esto no es cierto, es una consecuencia directa del modo en el que generamos los datos para testing, como lo describimos en secciones anteriores (notar que usamos el modo raw para poder
+generar los datos de prueba y luego modificamos sus valores de relevancia, pero en cada caso lo
+peor que puede pasar es quitar documentos relevantes, no incorporarlos). Aunque en este aspecto,
+el modo raw se comporta mejor que el enhanced, cuando utilizamos un conjunto de datos mas pequenho pero realista, los resultados fueron opuestos, solo que para obtener mejores metricas,
+es necesario un volumen de datos mayor y la simulacion fue necesaria. En verdad el enhanced es incluso capaz de incorporar documentos relevantes, que antes no lo eran, en dependencia del threshold que le designemos al vector devuelto por la red neural para el filtrado de similaridad.
+Si bajamos el threshold, podemos aumentar este recovery, pero a la vez, bajamos la precision, la cual actualmente es mucho mejor que la del modo raw. Las metricas obtenidas son el resultado del
+promedio de aplicar las metricas a 1000 queries y sus resultados en cada modo del sistema.
+
+### Generacion de datos de testing
+
+El modulo train_data_generator.py sirve para generar colecciones de datos contra las cuales
+el sistema se pueda entrenar y evaluar, simulando el proceso de recopilacion de informacion
+en repositorios a los cuales les pudieramos hacer crawling.
+
+### Entrenamiento
+
+El modulo train_model.py esta concebido para correr como background job que se ejecute cada 
+vez que se actualiza un repositorio de datos, en este caso se crea un indice y se entrena 
+el modelo de ML contra estos nuevos datos y luego se compila para ser cargado por el servidor.
+
+### Carga del modelo en startup
+
+Cada vez que lancemos el servidor, este realiza el indexado de terminos y documentos, y carga 
+el modelo de ML que se utiliza en el modo enhanced de busqueda. Este proceso se pone en startup para ejemplificar el proceso de updating del indice y del modelo cada ciertos eventos (como por ejemplo la actualizacion de un repositorio de informacion).
+
+### Lanzar el servidor:
+
+Lanzar el servidor es facil:
+
+clonar el repo
+
+```bash
+    $ git clone https://github.com/IOverflow/SRIserver.git
+```
+
+instalar las dependencias (ojo son varios megas de descarga)
+
+```bash
+    $ python -m pip install -r requirements.txt
+```
+
+correr el servidor:
+
+```bash
+    $ python app.py
+```
+
+o
+```bash
+    $ uvicorn app:app
+```
