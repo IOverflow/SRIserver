@@ -7,27 +7,6 @@ from colorama import Fore
 from alive_progress import alive_bar
 
 
-def test_get_vocabulary():
-    with TestClient(app) as testClient:
-        response = testClient.get("/search/vocabulary")
-        assert response.status_code == 200
-        assert len(response.json()) > 0
-        assert all(
-            term
-            not in [
-                "in",
-                "and",
-                "or",
-                "an",
-                "a",
-                "the",
-                "that",
-                "what",
-            ]
-            for term in response.json()
-        )
-
-
 def test_precision_raw_search():
     data: List[Dict[str, Union[List[str], List[float]]]] = []
 
@@ -260,7 +239,9 @@ def test_fallout_search():
                 def is_irrelevant_and_not_retrieved(doc):
                     return target[doc] == 0 and not doc in retrieved_docs
 
-                irrelevants: int = len(list(filter(is_irrelevant, response.json()["diseases"])))
+                irrelevants: int = len(
+                    list(filter(is_irrelevant, response.json()["diseases"]))
+                )
 
                 n_irrelevants: int = len(
                     list(
@@ -312,7 +293,9 @@ def test_fallout_enhanced_search():
                 def is_irrelevant_and_not_retrieved(doc):
                     return target[doc] == 0 and not doc in retrieved_docs
 
-                irrelevants: int = len(list(filter(is_irrelevant, response.json()["diseases"])))
+                irrelevants: int = len(
+                    list(filter(is_irrelevant, response.json()["diseases"]))
+                )
 
                 n_irrelevants: int = len(
                     list(
