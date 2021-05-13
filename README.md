@@ -93,6 +93,88 @@ que aplica este algoritmo automaticamente, pero queda mucho mejor hecho a mano (
 
 ## Calculo de similitud
 
-## Filtrado de relevancia
+Una vez formado los vectores de consulta y los de los documentos, formamos un nuevo vector, con
+una componente por cada documento que representa la similitud de este documento con la consulta.
+
+El calculo de este vector es donde las cosas se ponen interesantes. El sistema ofrece dos modos
+de busqueda, raw y enhanced. En el metodo de busqueda raw, calculamos la similitud de cada documento con la consulta utilizando la funcion coseno, tenemos en cuenta que esta similitud
+puede ser 0, y luego filtramos los documentos de relevancia 0 y ordenamos la lista de documentos
+similares para devolverla. Este enfoque tiene varias ventajas:
+
+  * Solo se devuelven documentos con algun termino de la query
+
+  * El coseno funciona bien ordenando documentos por la "relevancia" de sus terminos
+
+  * Es facil de implementar
+
+Pero el problema es que lo que el coseno interpreta por relevante, puede no ser relevante para
+un especialista de la salud. Por ejemplo, si buscamos "cough", el coseno bien pudiera devolvernos
+como mas relevante "cold", que "covid", sin embargo con las situaciones actuales, es mucho mas probable que una persona con tos tenga covid, o que alguien que busca tos como descripcion o nombre, este mas interesado en la covid que en el resfriado comun. Este tipo de "inferencia", el 
+sistema no puede hacerlo por si solo utilizando solamente la funcion coseno. Para ello incorporamos un mecanismo de retroalimentacion.
+
+La retroalimentacion no ocurre de la forma descrita en las conferencias, no nos gusta la idea
+de un usuario eligiendo que documentos son mas relevantes que otros, mas que nada porque es 
+posible que la eleccion de un usuario no sea una fiel representacion de la relevancia de un
+termino para una enfermedad, pues el sistema esta orientado tanto a pacientes como a especialistas.
+
+Dicho esto, necesitamos nutrirnos de algun lugar. La idea es que existan repositorios de 
+clasificaciones realizadas solo por especialistas, a estos repositorios accederia nuestro sistema
+con un crawler, para obtener la retroalimentacion necesaria para mejorar las consultas.
+
+En el proyecto actual, por restricciones de conectividad y la dificultad de generar estos repositorios (solo contamos con un personal de salud que nos ayudara para el proyecto), simulamos
+los mismos con un generador datos de entrenamiento aleatorio. Este generador no es tan simple
+como suena, no es poner valores aleatorios en las consultas y valores aleatorios a los documentos.
+Lo que hacemos es obtener el vocabulario de nuestro sistema, de ahi generamos consultas aleatorias 
+que contengan terminos del vocabulario y/o terminos aleatorios (giberish), de modo que se generen
+consultas completamente irrelevantes, y otras que solo tengan terminos del vocabulario y otras mixtas.
+Luego que tenemos estas consultas, se las pasamos a nuestro sistema vectorial basado en coseno (raw search) y obtenemos los documentos que son relevantes, luego tomamos cada valor de similaridad y
+aleatoriamente lo hacemos 0 o le asignamos un valor aleatorio entre 0 y 1. Este proceso puede ser visto
+como un usuario haciendo preguntas aleatorias al sistema y seleccionando aleatoriamente documentos como relevantes o no. Aunque este proceso disminuye la "realidad" de nuestros resultados, nos permite
+evaluar de manera efectiva nuestro modelo frente a la retroalimentacion.
+
+Solo nos queda integrar este mecanismo con el sistema. Para eso esta el modulo enhanced search.
+En este modo, el sistema realiza los mismos pasos que el modo raw, hasta obtener el vector de similaridad a traves del coseno. Una vez que este vector es obtenido, se le pasa a una red neuronal
+(la estructura la describimos mas adelante) que produce un vector final con el vector real de similaridad para los documentos.
+Esta red se entrena con los datos obtenidos de la retroalimentacion, y se compila a archivos que luego son cargados por el servidor. De esta forma el sistema lanza cada cierto tiempo background tasks que actualizan los repositorios de clasificaciones, luego reentrenan el modelo con esta nueva informacion, lo compila (serializa) y luego el sistema lo carga para realizar el filtrado de relevancia.
+
+## Estructura de la red neuronal del modo enhanced.
 
 ![](./Network.png)
+
+La figura muestra la estructura de nuestra red, una capa de entrada con n + m nodos (n es la cantidad de documentos del sistema y m es la cantidad de terminos del vocabulario), una capa interna de m nodos y la capa de salida de n nodos. Los primeros n nodos de la capa de entrada
+se conectan con todos los nodos interiores; los restantes m nodos se conectan uno a uno, el nodo n + i de la capa de entrada, con el nodo i de la capa interna. Cada nodo de la capa interna se
+conecta con todos los nodos de la capa de salida.
+
+Al modelo se le entra el vector similaridad calculado, y el vector consulta, y el sistema intenta
+"reordenar" correctamente los valores de similitud del vector similaridad. La idea es que cada documento se conecta con cada termino, y cada componente de la query se conecta solo con el
+termino al cual afecta su peso.
+
+Este enfoque ofrece varias ventajas sobre el modo raw:
+
+ * Todas las metricas mejoran
+
+ * Tiene en cuenta las preferencias de los especialistas
+
+ * Incorpora retroalimentacion continua al modelo.
+
+ * Infiere resultados relevantes aun cuando los terminos de busqueda no aparezcan en el documento, por ejemplo, "death" se puede relacionar con "cancer", aun cuando esa palabra no
+ aparezca directamente en los terminos de la enfermedad, solo 
+
+El problema con este enfoque es que complejiza el proceso del calculo de los documentos relevantes, ya que hay que desarrollar la red, entrenarla, actualizar los repositorios, volver a 
+entrenarla, etc. Ademas, la naturaleza de la red neural no permite conocer los criterios
+utilizados para la clasificacion, por lo que funcionan algo asi como una caja negra. A pesar
+de esto, esta funcionalidad provo ser una componente esencial para mejorar el funcionamiento 
+de nuestro sistema.
+
+## Obtencion de terminos relacionados
+
+Uno de los mecanismos para mejorar los resultados ofrecidos por el sistema, es la expansion de
+consultas, para la cual es necesario obtener un conjunto de terminos relacionados con la misma.
+Esta fase es independiente del modo de busqueda y la idea es devolver un cojunto de terminos del
+vocabulario que se puedan agregar a la consulta y permita obtener documentos mas relevantes, o 
+aumentar la precision de los documentos devueltos. Para esto, en la fase de indexado, creamos 
+una matriz de matcheo, que relaciona dos terminos si estos aparecen en el mismo documento, luego,
+cuando una query es requerida, se buscan los terminos que matcheen con la mayor cantidad de 
+terminos de la query. Estos terminos conforman una lista de posibles sugerencias, de las cuales
+seleccionamos a lo sumo 4 terminos para enviar de vuelta al cliente como sugerencia para extender
+su consulta.
